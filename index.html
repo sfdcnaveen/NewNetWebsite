@@ -1,165 +1,788 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>NewNet — macOS Download Manager</title>
-    <meta name="description" content="A beautiful native menu-bar frontend for yt-dlp. Download videos and audio from YouTube, TikTok, and more right from your Mac's menu bar." />
-    <link rel="icon" type="image/png" href="app_icon.png" />
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NewNet — macOS Download Manager</title>
+  <meta name="description" content="A beautiful native menu-bar frontend for yt-dlp. Download videos and audio from YouTube, TikTok, and more right from your Mac's menu bar.">
+  <meta property="og:title" content="NewNet — macOS Download Manager">
+  <meta property="og:description" content="A beautiful native menu-bar frontend for yt-dlp. Download videos and audio from YouTube, TikTok, and more right from your Mac's menu bar.">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" type="image/png" href="app_icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <style>
+    /* Reset & Variables */
+    :root {
+      --bg: #F5F5F7;
+      --surface: #FFFFFF;
+      --surface-hover: rgba(0, 0, 0, 0.03);
+      --surface-elevated: rgba(255, 255, 255, 0.7);
+      --text-primary: #1D1D1F;
+      --text-secondary: #86868B;
+      --text-tertiary: #A1A1A6;
+      --accent: #0071E3;
+      --accent-secondary: rgba(0, 113, 227, 0.1);
+      --btn-primary-bg: #0071E3;
+      --btn-primary-text: #FFFFFF;
+      --border: rgba(0, 0, 0, 0.08);
+      --glass: rgba(255, 255, 255, 0.75);
+      --shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
+      --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.12);
+      --focus: rgba(0, 113, 227, 0.5);
 
-    
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet" />
-    
-    <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+      --ease-standard: cubic-bezier(0.25, 1, 0.5, 1);
+      --ease-enter: cubic-bezier(0.0, 0, 0.2, 1);
+      --ease-exit: cubic-bezier(0.4, 0, 1, 1);
+      --ease-emphasis: cubic-bezier(0.2, 0, 0, 1);
+    }
 
+    @media (prefers-color-scheme: dark) {
       :root {
-        --bg: #0A0A0B;
-        --text: #FAFAFA;
-        --text-muted: #6B6B70;
-        --cyan: #00F0FF;
-        --blue: #00A8FF;
-        --magenta: #FF0080;
+        --bg: #000000;
+        --surface: #1C1C1E;
+        --surface-hover: rgba(255, 255, 255, 0.04);
+        --surface-elevated: rgba(30, 30, 32, 0.65);
+        --text-primary: #F5F5F7;
+        --text-secondary: #86868B;
+        --text-tertiary: #515154;
+        --accent: #00F0FF;
+        --accent-secondary: rgba(0, 240, 255, 0.15);
+        --btn-primary-bg: #00F0FF;
+        --btn-primary-text: #000000;
+        --border: rgba(255, 255, 255, 0.1);
+        --glass: rgba(20, 20, 22, 0.65);
+        --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+        --shadow-elevated: 0 20px 60px rgba(0, 0, 0, 0.6);
+        --focus: rgba(0, 240, 255, 0.5);
       }
+    }
 
-      body {
-        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-        background: var(--bg);
-        color: var(--text);
-        min-height: 100vh;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 24px;
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', 'Helvetica Neue', sans-serif;
+      background-color: var(--bg);
+      color: var(--text-primary);
+      line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      overflow-x: hidden;
+    }
+
+    /* Accessibility Focus */
+    *:focus-visible {
+      outline: 2px solid var(--focus);
+      outline-offset: 2px;
+    }
+
+    /* Typography */
+    h1, h2, h3, p {
+      margin: 0;
+    }
+
+    /* Ambient Background */
+    .ambient-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: -1;
+      pointer-events: none;
+      overflow: hidden;
+    }
+    .ambient-glow {
+      position: absolute;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80vw;
+      height: 80vh;
+      background: radial-gradient(circle, var(--accent-secondary) 0%, transparent 60%);
+      filter: blur(100px);
+      opacity: 0.6;
+    }
+
+    /* Nav */
+    .nav-bar {
+      position: sticky;
+      top: 0;
+      left: 0;
+      width: 100%;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      background: var(--glass);
+      border-bottom: 1px solid var(--border);
+      z-index: 100;
+    }
+    .nav-content {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .nav-brand {
+      font-weight: 600;
+      font-size: 15px;
+      letter-spacing: -0.01em;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-icon {
+      width: 20px;
+      height: 20px;
+      border-radius: 4px;
+    }
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 14px;
+      transition: color 0.2s var(--ease-standard);
+    }
+    .nav-links a:hover {
+      color: var(--text-primary);
+    }
+
+    /* Container */
+    .container {
+      max-width: 1040px;
+      margin: 0 auto;
+      padding: 0 24px;
+      position: relative;
+      z-index: 10;
+    }
+
+    /* Hero */
+    .hero {
+      padding: 100px 0 80px;
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hero-icon-container {
+      position: relative;
+      margin-bottom: 32px;
+      width: 112px;
+      height: 112px;
+    }
+    .hero-icon {
+      width: 100%;
+      height: 100%;
+      border-radius: 26px;
+      position: relative;
+      z-index: 2;
+      box-shadow: var(--shadow-elevated);
+      transition: transform 0.4s var(--ease-standard);
+    }
+    .hero-icon-container:hover .hero-icon {
+      transform: translateY(-4px) scale(1.02);
+    }
+    .icon-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 100%;
+      height: 100%;
+      border-radius: 26px;
+      background: var(--accent);
+      filter: blur(32px);
+      opacity: 0.15;
+      z-index: 1;
+      transition: opacity 0.4s var(--ease-standard);
+    }
+    .hero-icon-container:hover .icon-glow {
+      opacity: 0.3;
+    }
+
+    .hero-title {
+      font-size: 56px;
+      font-weight: 600;
+      letter-spacing: -0.025em;
+      line-height: 1.05;
+      margin-bottom: 24px;
+      max-width: 640px;
+    }
+    .hero-subtitle {
+      font-size: 21px;
+      color: var(--text-secondary);
+      max-width: 540px;
+      line-height: 1.4;
+      margin-bottom: 40px;
+      letter-spacing: -0.01em;
+    }
+
+    /* CTAs */
+    .hero-ctas {
+      display: flex;
+      gap: 16px;
+      align-items: center;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 99px;
+      font-size: 15px;
+      font-weight: 500;
+      text-decoration: none;
+      transition: all 0.2s var(--ease-standard);
+      outline: none;
+    }
+    .btn-primary {
+      background: var(--btn-primary-bg);
+      color: var(--btn-primary-text);
+      box-shadow: var(--shadow);
+    }
+    .btn-primary:hover {
+      transform: scale(1.02);
+      box-shadow: var(--shadow-elevated);
+      filter: brightness(1.1);
+    }
+    .btn-primary:active {
+      transform: scale(0.98);
+    }
+    .btn-secondary {
+      background: var(--surface);
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover {
+      background: var(--surface-hover);
+    }
+    .btn-secondary:active {
+      transform: scale(0.98);
+    }
+
+    /* Mockup */
+    .visual-section {
+      padding: 20px 0 100px;
+      display: flex;
+      justify-content: center;
+      perspective: 1200px;
+    }
+    .mockup-container {
+      width: 100%;
+      max-width: 460px;
+      position: relative;
+    }
+    .menu-bar-panel {
+      background: var(--surface-elevated);
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      box-shadow: var(--shadow-elevated);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 0.1s;
+    }
+    .menu-bar-panel::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at var(--px, 50%) var(--py, 50%), var(--accent-secondary) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .menu-bar-panel:hover::before {
+      opacity: 1;
+    }
+    .panel-header {
+      padding: 14px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
+    }
+    .panel-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .panel-input-group {
+      padding: 16px;
+      display: flex;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      z-index: 1;
+    }
+    .input-fake {
+      flex: 1;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 13px;
+      color: var(--text-tertiary);
+      display: flex;
+      align-items: center;
+      transition: border-color 0.2s;
+    }
+    .btn-fake {
+      background: var(--accent);
+      color: var(--btn-primary-text);
+      font-size: 13px;
+      font-weight: 500;
+      padding: 8px 16px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: default;
+    }
+    .panel-list {
+      padding: 8px 0;
+      position: relative;
+      z-index: 1;
+    }
+    .panel-item {
+      padding: 10px 16px;
+      display: flex;
+      gap: 14px;
+      align-items: center;
+      transition: background 0.2s;
+    }
+    .panel-item:hover {
+      background: var(--surface-hover);
+    }
+    .item-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .bg-accent { background: var(--accent); color: var(--btn-primary-text); }
+    .bg-success { background: #34C759; color: #FFFFFF; }
+    .item-details {
+      flex: 1;
+      min-width: 0;
+    }
+    .item-title {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-primary);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 6px;
+    }
+    .item-status {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .progress-bar {
+      flex: 1;
+      height: 4px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 2px;
+      width: 0%;
+    }
+    .status-text {
+      font-size: 12px;
+      color: var(--text-secondary);
+      white-space: nowrap;
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* Features */
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 24px;
+      padding-bottom: 120px;
+    }
+    .feature-card {
+      padding: 32px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      transition: transform 0.3s var(--ease-standard), box-shadow 0.3s var(--ease-standard);
+      position: relative;
+      overflow: hidden;
+    }
+    .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), var(--accent-secondary) 0%, transparent 60%);
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .feature-card:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+    .feature-card:hover::before {
+      opacity: 1;
+    }
+    .feature-content {
+      position: relative;
+      z-index: 1;
+    }
+    .feature-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      background: var(--surface-hover);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent);
+      margin-bottom: 24px;
+    }
+    .feature-title {
+      font-size: 19px;
+      font-weight: 600;
+      margin-bottom: 10px;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
+    }
+    .feature-desc {
+      font-size: 15px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* Footer */
+    .footer {
+      border-top: 1px solid var(--border);
+      padding: 40px 24px;
+      text-align: center;
+    }
+    .footer-content p {
+      font-size: 14px;
+      color: var(--text-tertiary);
+    }
+    .footer-content a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      transition: color 0.2s;
+    }
+    .footer-content a:hover {
+      color: var(--text-primary);
+    }
+
+    /* Animations */
+    .animate-in {
+      opacity: 0;
+      transform: translateY(20px);
+      animation: fadeUp 0.8s var(--ease-exit) forwards;
+    }
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+
+    @keyframes fadeUp {
+      to {
+        opacity: 1;
+        transform: translateY(0);
       }
+    }
+    
+    .mockup-anim {
+      animation: float 6s ease-in-out infinite;
+    }
+    @keyframes float {
+      0% { transform: translateY(0px); }
+      50% { transform: translateY(-8px); }
+      100% { transform: translateY(0px); }
+    }
 
+    .fill-anim {
+      animation: progressLoad 3s cubic-bezier(0.1, 0, 0.2, 1) forwards;
+      animation-delay: 1.2s;
+    }
+    @keyframes progressLoad {
+      0% { width: 0%; }
+      20% { width: 45%; }
+      60% { width: 68%; }
+      100% { width: 82%; }
+    }
+    .text-anim {
+      animation: textUpdate 3s cubic-bezier(0.1, 0, 0.2, 1) forwards;
+      animation-delay: 1.2s;
+      opacity: 0;
+    }
+    @keyframes textUpdate {
+      0% { opacity: 1; }
+      100% { opacity: 1; }
+    }
+
+    /* Reduced Motion */
+    @media (prefers-reduced-motion: reduce) {
+      * {
+        animation: none !important;
+        transition: none !important;
+      }
+      .animate-in {
+        opacity: 1;
+        transform: none;
+      }
+      .ambient-background {
+        display: none;
+      }
+      .progress-fill {
+        width: 82%;
+      }
+      .text-anim {
+        opacity: 1;
+      }
+      .menu-bar-panel::before, .feature-card::before {
+        display: none;
+      }
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
       .hero {
-        text-align: center;
-        max-width: 520px;
+        padding: 60px 0 40px;
       }
-
-      .app-icon {
-        width: 120px;
-        height: 120px;
-        border-radius: 28px;
-        margin-bottom: 32px;
-        box-shadow: 0 20px 60px rgba(0, 240, 255, 0.2);
-      }
-
-      .logo {
-        font-family: 'Outfit', sans-serif;
+      .hero-title {
         font-size: 42px;
-        font-weight: 700;
-        margin-bottom: 8px;
-        background: var(--cyan);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
       }
-
-      .tagline {
-        font-size: 18px;
-        color: var(--text-muted);
-        margin-bottom: 40px;
-        line-height: 1.6;
+      .hero-subtitle {
+        font-size: 19px;
       }
-
-      .description {
-        font-size: 15px;
-        color: var(--text-muted);
-        line-height: 1.7;
-        margin-bottom: 32px;
-      }
-
-      .description strong {
-        color: var(--text);
-      }
-
-      .btn {
-        display: inline-flex;
-        align-items: center;
-        gap: 10px;
-        padding: 14px 28px;
-        background: linear-gradient(135deg, var(--cyan), var(--blue));
-        color: var(--bg);
-        border-radius: 12px;
-        font-size: 15px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-
-      .btn:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 10px 30px rgba(0, 240, 255, 0.3);
-      }
-
-      .btn svg {
-        width: 18px;
-        height: 18px;
-      }
-
       .features {
-        display: flex;
-        justify-content: center;
-        gap: 32px;
-        margin-top: 48px;
-        flex-wrap: wrap;
+        grid-template-columns: 1fr;
       }
-
-      .feature {
-        font-size: 13px;
-        color: var(--text-muted);
+      .visual-section {
+        padding: 0 0 60px;
       }
-
-      .footer {
-        margin-top: 60px;
-        font-size: 13px;
-        color: var(--text-muted);
+    }
+    @media (max-width: 480px) {
+      .hero-title {
+        font-size: 34px;
       }
-
-      .footer a {
-        color: var(--text-muted);
-        text-decoration: none;
+      .hero-subtitle {
+        font-size: 17px;
       }
-
-      .footer a:hover {
-        color: var(--cyan);
+      .hero-ctas {
+        flex-direction: column;
+        width: 100%;
       }
-    </style>
-  </head>
-  <body>
-    <div class="hero">
-      <img src="app_icon.png" alt="NewNet" class="app-icon" />
-      
-      <h1 class="logo" style="color: #00F0FF;">NewNet</h1>
-      <p class="tagline">Native macOS menu-bar app for yt-dlp</p>
-      
-      <p class="description">
-        Download videos and audio from <strong>YouTube, TikTok, Instagram, Twitter</strong> and 1700+ sites.<br />
-        Runs in your menu bar — simple, fast, and private.
-      </p>
-      
-      <a href="https://github.com/sfdcnaveen/NewNet/releases" class="btn">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-        Download for macOS
-      </a>
+      .btn {
+        width: 100%;
+      }
+    }
+  </style>
+</head>
+<body>
+  
+  <div class="ambient-background">
+    <div class="ambient-glow"></div>
+  </div>
 
-      <div class="features">
-        <span class="feature">⚡ Lightning Fast</span>
-        <span class="feature">🔒 Private</span>
-        <span class="feature">🎯 Explicit Control</span>
+  <nav class="nav-bar animate-in">
+    <div class="nav-content">
+      <div class="nav-brand">
+        <img src="app_icon.png" alt="NewNet" class="nav-icon">
+        NewNet
       </div>
-
-      <div class="footer">
-        <p>Created by • <a href="https://sfdcnaveen.github.io/naveen-contact-card/">Naveen</a></p>
+      <div class="nav-links">
+        <a href="https://github.com/sfdcnaveen/NewNet" target="_blank" rel="noopener noreferrer">GitHub</a>
       </div>
     </div>
-  </body>
+  </nav>
+
+  <main class="container">
+    <section class="hero">
+      <div class="hero-icon-container animate-in delay-1">
+        <div class="icon-glow"></div>
+        <img src="app_icon.png" alt="NewNet App Icon" class="hero-icon" />
+      </div>
+      
+      <h1 class="hero-title animate-in delay-2">Powerful downloads.<br>Native on your Mac.</h1>
+      <p class="hero-subtitle animate-in delay-3">NewNet brings yt-dlp's powerful capabilities into a focused menu-bar experience designed for macOS.</p>
+      
+      <div class="hero-ctas animate-in delay-4">
+        <a href="https://github.com/sfdcnaveen/NewNet/releases" class="btn btn-primary">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          Download for macOS
+        </a>
+        <a href="https://github.com/sfdcnaveen/NewNet" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
+          View on GitHub
+        </a>
+      </div>
+    </section>
+
+    <section class="visual-section animate-in delay-5">
+      <div class="mockup-container mockup-anim">
+        <div class="menu-bar-panel" id="mockupPanel">
+          <div class="panel-header">
+            <span class="panel-title">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              NewNet
+            </span>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          </div>
+          <div class="panel-input-group">
+            <div class="input-fake">https://youtube.com/watch?v=...</div>
+            <div class="btn-fake">Add</div>
+          </div>
+          <div class="panel-list">
+            <div class="panel-item">
+              <div class="item-icon bg-accent">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+              </div>
+              <div class="item-details">
+                <div class="item-title">Design Principles.mp4</div>
+                <div class="item-status">
+                  <div class="progress-bar"><div class="progress-fill fill-anim"></div></div>
+                  <span class="status-text text-anim">82% • 12 MB/s</span>
+                </div>
+              </div>
+            </div>
+            <div class="panel-item">
+              <div class="item-icon bg-success">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+              </div>
+              <div class="item-details">
+                <div class="item-title">Apple Event 2024.mp4</div>
+                <div class="item-status">
+                  <span class="status-text">Completed</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="features-section">
+      <div class="features">
+        <div class="feature-card animate-in delay-2" id="card1">
+          <div class="feature-content">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
+                <line x1="8" y1="21" x2="16" y2="21"></line>
+                <line x1="12" y1="17" x2="12" y2="21"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Native</h3>
+            <p class="feature-desc">Built specifically for macOS rather than adapted from a web application. Lightning fast performance.</p>
+          </div>
+        </div>
+        <div class="feature-card animate-in delay-3" id="card2">
+          <div class="feature-content">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
+              </svg>
+            </div>
+            <h3 class="feature-title">Private</h3>
+            <p class="feature-desc">No unnecessary accounts, dashboards, or cloud processing. Everything happens locally on your Mac.</p>
+          </div>
+        </div>
+        <div class="feature-card animate-in delay-4" id="card3">
+          <div class="feature-content">
+            <div class="feature-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="4" y1="21" x2="4" y2="14"></line>
+                <line x1="4" y1="10" x2="4" y2="3"></line>
+                <line x1="12" y1="21" x2="12" y2="12"></line>
+                <line x1="12" y1="8" x2="12" y2="3"></line>
+                <line x1="20" y1="21" x2="20" y2="16"></line>
+                <line x1="20" y1="12" x2="20" y2="3"></line>
+                <line x1="1" y1="14" x2="7" y2="14"></line>
+                <line x1="9" y1="8" x2="15" y2="8"></line>
+                <line x1="17" y1="16" x2="23" y2="16"></line>
+              </svg>
+            </div>
+            <h3 class="feature-title">Controlled</h3>
+            <p class="feature-desc">Explicit control over downloads and destinations. Choose exactly what you want and where it goes.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="footer-content">
+      <p>Created by <a href="https://sfdcnaveen.github.io/naveen-contact-card/" target="_blank" rel="noopener noreferrer">Naveen</a></p>
+    </div>
+  </footer>
+
+  <script>
+    const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (!isReducedMotion) {
+      const cards = document.querySelectorAll('.feature-card');
+      cards.forEach(card => {
+        card.addEventListener('mousemove', e => {
+          const rect = card.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          card.style.setProperty('--x', `${x}px`);
+          card.style.setProperty('--y', `${y}px`);
+        });
+      });
+
+      const panel = document.getElementById('mockupPanel');
+      if (panel) {
+        panel.addEventListener('mousemove', e => {
+          const rect = panel.getBoundingClientRect();
+          const x = e.clientX - rect.left;
+          const y = e.clientY - rect.top;
+          panel.style.setProperty('--px', `${x}px`);
+          panel.style.setProperty('--py', `${y}px`);
+          
+          const centerX = rect.width / 2;
+          const centerY = rect.height / 2;
+          const tiltX = (y - centerY) / centerY * -2;
+          const tiltY = (x - centerX) / centerX * 2;
+          panel.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+        });
+        
+        panel.addEventListener('mouseleave', () => {
+          panel.style.transform = 'rotateX(0deg) rotateY(0deg)';
+        });
+      }
+    }
+  </script>
+</body>
 </html>
