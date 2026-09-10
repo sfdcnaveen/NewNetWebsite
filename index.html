@@ -1,788 +1,409 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>NewNet — macOS Download Manager</title>
-  <meta name="description" content="A beautiful native menu-bar frontend for yt-dlp. Download videos and audio from YouTube, TikTok, and more right from your Mac's menu bar.">
-  <meta property="og:title" content="NewNet — macOS Download Manager">
-  <meta property="og:description" content="A beautiful native menu-bar frontend for yt-dlp. Download videos and audio from YouTube, TikTok, and more right from your Mac's menu bar.">
-  <meta name="twitter:card" content="summary_large_image">
-  <link rel="icon" type="image/png" href="app_icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  
-  <style>
-    /* Reset & Variables */
-    :root {
-      --bg: #F5F5F7;
-      --surface: #FFFFFF;
-      --surface-hover: rgba(0, 0, 0, 0.03);
-      --surface-elevated: rgba(255, 255, 255, 0.7);
-      --text-primary: #1D1D1F;
-      --text-secondary: #86868B;
-      --text-tertiary: #A1A1A6;
-      --accent: #0071E3;
-      --accent-secondary: rgba(0, 113, 227, 0.1);
-      --btn-primary-bg: #0071E3;
-      --btn-primary-text: #FFFFFF;
-      --border: rgba(0, 0, 0, 0.08);
-      --glass: rgba(255, 255, 255, 0.75);
-      --shadow: 0 4px 24px rgba(0, 0, 0, 0.04);
-      --shadow-elevated: 0 12px 48px rgba(0, 0, 0, 0.12);
-      --focus: rgba(0, 113, 227, 0.5);
-
-      --ease-standard: cubic-bezier(0.25, 1, 0.5, 1);
-      --ease-enter: cubic-bezier(0.0, 0, 0.2, 1);
-      --ease-exit: cubic-bezier(0.4, 0, 1, 1);
-      --ease-emphasis: cubic-bezier(0.2, 0, 0, 1);
-    }
-
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg: #000000;
-        --surface: #1C1C1E;
-        --surface-hover: rgba(255, 255, 255, 0.04);
-        --surface-elevated: rgba(30, 30, 32, 0.65);
-        --text-primary: #F5F5F7;
-        --text-secondary: #86868B;
-        --text-tertiary: #515154;
-        --accent: #00F0FF;
-        --accent-secondary: rgba(0, 240, 255, 0.15);
-        --btn-primary-bg: #00F0FF;
-        --btn-primary-text: #000000;
-        --border: rgba(255, 255, 255, 0.1);
-        --glass: rgba(20, 20, 22, 0.65);
-        --shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
-        --shadow-elevated: 0 20px 60px rgba(0, 0, 0, 0.6);
-        --focus: rgba(0, 240, 255, 0.5);
-      }
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Inter', 'SF Pro Text', 'Helvetica Neue', sans-serif;
-      background-color: var(--bg);
-      color: var(--text-primary);
-      line-height: 1.5;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      overflow-x: hidden;
-    }
-
-    /* Accessibility Focus */
-    *:focus-visible {
-      outline: 2px solid var(--focus);
-      outline-offset: 2px;
-    }
-
-    /* Typography */
-    h1, h2, h3, p {
-      margin: 0;
-    }
-
-    /* Ambient Background */
-    .ambient-background {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      z-index: -1;
-      pointer-events: none;
-      overflow: hidden;
-    }
-    .ambient-glow {
-      position: absolute;
-      top: -20%;
-      left: 50%;
-      transform: translateX(-50%);
-      width: 80vw;
-      height: 80vh;
-      background: radial-gradient(circle, var(--accent-secondary) 0%, transparent 60%);
-      filter: blur(100px);
-      opacity: 0.6;
-    }
-
-    /* Nav */
-    .nav-bar {
-      position: sticky;
-      top: 0;
-      left: 0;
-      width: 100%;
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      background: var(--glass);
-      border-bottom: 1px solid var(--border);
-      z-index: 100;
-    }
-    .nav-content {
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 14px 24px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-    .nav-brand {
-      font-weight: 600;
-      font-size: 15px;
-      letter-spacing: -0.01em;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .nav-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 4px;
-    }
-    .nav-links a {
-      color: var(--text-secondary);
-      text-decoration: none;
-      font-size: 14px;
-      transition: color 0.2s var(--ease-standard);
-    }
-    .nav-links a:hover {
-      color: var(--text-primary);
-    }
-
-    /* Container */
-    .container {
-      max-width: 1040px;
-      margin: 0 auto;
-      padding: 0 24px;
-      position: relative;
-      z-index: 10;
-    }
-
-    /* Hero */
-    .hero {
-      padding: 100px 0 80px;
-      text-align: center;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .hero-icon-container {
-      position: relative;
-      margin-bottom: 32px;
-      width: 112px;
-      height: 112px;
-    }
-    .hero-icon {
-      width: 100%;
-      height: 100%;
-      border-radius: 26px;
-      position: relative;
-      z-index: 2;
-      box-shadow: var(--shadow-elevated);
-      transition: transform 0.4s var(--ease-standard);
-    }
-    .hero-icon-container:hover .hero-icon {
-      transform: translateY(-4px) scale(1.02);
-    }
-    .icon-glow {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      width: 100%;
-      height: 100%;
-      border-radius: 26px;
-      background: var(--accent);
-      filter: blur(32px);
-      opacity: 0.15;
-      z-index: 1;
-      transition: opacity 0.4s var(--ease-standard);
-    }
-    .hero-icon-container:hover .icon-glow {
-      opacity: 0.3;
-    }
-
-    .hero-title {
-      font-size: 56px;
-      font-weight: 600;
-      letter-spacing: -0.025em;
-      line-height: 1.05;
-      margin-bottom: 24px;
-      max-width: 640px;
-    }
-    .hero-subtitle {
-      font-size: 21px;
-      color: var(--text-secondary);
-      max-width: 540px;
-      line-height: 1.4;
-      margin-bottom: 40px;
-      letter-spacing: -0.01em;
-    }
-
-    /* CTAs */
-    .hero-ctas {
-      display: flex;
-      gap: 16px;
-      align-items: center;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      padding: 14px 28px;
-      border-radius: 99px;
-      font-size: 15px;
-      font-weight: 500;
-      text-decoration: none;
-      transition: all 0.2s var(--ease-standard);
-      outline: none;
-    }
-    .btn-primary {
-      background: var(--btn-primary-bg);
-      color: var(--btn-primary-text);
-      box-shadow: var(--shadow);
-    }
-    .btn-primary:hover {
-      transform: scale(1.02);
-      box-shadow: var(--shadow-elevated);
-      filter: brightness(1.1);
-    }
-    .btn-primary:active {
-      transform: scale(0.98);
-    }
-    .btn-secondary {
-      background: var(--surface);
-      color: var(--text-primary);
-      border: 1px solid var(--border);
-    }
-    .btn-secondary:hover {
-      background: var(--surface-hover);
-    }
-    .btn-secondary:active {
-      transform: scale(0.98);
-    }
-
-    /* Mockup */
-    .visual-section {
-      padding: 20px 0 100px;
-      display: flex;
-      justify-content: center;
-      perspective: 1200px;
-    }
-    .mockup-container {
-      width: 100%;
-      max-width: 460px;
-      position: relative;
-    }
-    .menu-bar-panel {
-      background: var(--surface-elevated);
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      box-shadow: var(--shadow-elevated);
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      position: relative;
-      transform-style: preserve-3d;
-      transition: transform 0.1s;
-    }
-    .menu-bar-panel::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: radial-gradient(circle at var(--px, 50%) var(--py, 50%), var(--accent-secondary) 0%, transparent 60%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .menu-bar-panel:hover::before {
-      opacity: 1;
-    }
-    .panel-header {
-      padding: 14px 16px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
-    }
-    .panel-title {
-      font-size: 13px;
-      font-weight: 600;
-      color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .panel-input-group {
-      padding: 16px;
-      display: flex;
-      gap: 8px;
-      border-bottom: 1px solid var(--border);
-      position: relative;
-      z-index: 1;
-    }
-    .input-fake {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 8px 12px;
-      font-size: 13px;
-      color: var(--text-tertiary);
-      display: flex;
-      align-items: center;
-      transition: border-color 0.2s;
-    }
-    .btn-fake {
-      background: var(--accent);
-      color: var(--btn-primary-text);
-      font-size: 13px;
-      font-weight: 500;
-      padding: 8px 16px;
-      border-radius: 6px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: default;
-    }
-    .panel-list {
-      padding: 8px 0;
-      position: relative;
-      z-index: 1;
-    }
-    .panel-item {
-      padding: 10px 16px;
-      display: flex;
-      gap: 14px;
-      align-items: center;
-      transition: background 0.2s;
-    }
-    .panel-item:hover {
-      background: var(--surface-hover);
-    }
-    .item-icon {
-      width: 36px;
-      height: 36px;
-      border-radius: 8px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #fff;
-      flex-shrink: 0;
-    }
-    .bg-accent { background: var(--accent); color: var(--btn-primary-text); }
-    .bg-success { background: #34C759; color: #FFFFFF; }
-    .item-details {
-      flex: 1;
-      min-width: 0;
-    }
-    .item-title {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-primary);
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      margin-bottom: 6px;
-    }
-    .item-status {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-    .progress-bar {
-      flex: 1;
-      height: 4px;
-      background: var(--border);
-      border-radius: 2px;
-      overflow: hidden;
-    }
-    .progress-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 2px;
-      width: 0%;
-    }
-    .status-text {
-      font-size: 12px;
-      color: var(--text-secondary);
-      white-space: nowrap;
-      font-variant-numeric: tabular-nums;
-    }
-
-    /* Features */
-    .features {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 24px;
-      padding-bottom: 120px;
-    }
-    .feature-card {
-      padding: 32px;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 24px;
-      transition: transform 0.3s var(--ease-standard), box-shadow 0.3s var(--ease-standard);
-      position: relative;
-      overflow: hidden;
-    }
-    .feature-card::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: radial-gradient(circle at var(--x, 50%) var(--y, 50%), var(--accent-secondary) 0%, transparent 60%);
-      opacity: 0;
-      transition: opacity 0.3s;
-      pointer-events: none;
-      z-index: 0;
-    }
-    .feature-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow);
-    }
-    .feature-card:hover::before {
-      opacity: 1;
-    }
-    .feature-content {
-      position: relative;
-      z-index: 1;
-    }
-    .feature-icon {
-      width: 48px;
-      height: 48px;
-      border-radius: 14px;
-      background: var(--surface-hover);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--accent);
-      margin-bottom: 24px;
-    }
-    .feature-title {
-      font-size: 19px;
-      font-weight: 600;
-      margin-bottom: 10px;
-      color: var(--text-primary);
-      letter-spacing: -0.01em;
-    }
-    .feature-desc {
-      font-size: 15px;
-      color: var(--text-secondary);
-      line-height: 1.6;
-    }
-
-    /* Footer */
-    .footer {
-      border-top: 1px solid var(--border);
-      padding: 40px 24px;
-      text-align: center;
-    }
-    .footer-content p {
-      font-size: 14px;
-      color: var(--text-tertiary);
-    }
-    .footer-content a {
-      color: var(--text-secondary);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .footer-content a:hover {
-      color: var(--text-primary);
-    }
-
-    /* Animations */
-    .animate-in {
-      opacity: 0;
-      transform: translateY(20px);
-      animation: fadeUp 0.8s var(--ease-exit) forwards;
-    }
-    .delay-1 { animation-delay: 0.1s; }
-    .delay-2 { animation-delay: 0.2s; }
-    .delay-3 { animation-delay: 0.3s; }
-    .delay-4 { animation-delay: 0.4s; }
-    .delay-5 { animation-delay: 0.5s; }
-
-    @keyframes fadeUp {
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-    
-    .mockup-anim {
-      animation: float 6s ease-in-out infinite;
-    }
-    @keyframes float {
-      0% { transform: translateY(0px); }
-      50% { transform: translateY(-8px); }
-      100% { transform: translateY(0px); }
-    }
-
-    .fill-anim {
-      animation: progressLoad 3s cubic-bezier(0.1, 0, 0.2, 1) forwards;
-      animation-delay: 1.2s;
-    }
-    @keyframes progressLoad {
-      0% { width: 0%; }
-      20% { width: 45%; }
-      60% { width: 68%; }
-      100% { width: 82%; }
-    }
-    .text-anim {
-      animation: textUpdate 3s cubic-bezier(0.1, 0, 0.2, 1) forwards;
-      animation-delay: 1.2s;
-      opacity: 0;
-    }
-    @keyframes textUpdate {
-      0% { opacity: 1; }
-      100% { opacity: 1; }
-    }
-
-    /* Reduced Motion */
-    @media (prefers-reduced-motion: reduce) {
-      * {
-        animation: none !important;
-        transition: none !important;
-      }
-      .animate-in {
-        opacity: 1;
-        transform: none;
-      }
-      .ambient-background {
-        display: none;
-      }
-      .progress-fill {
-        width: 82%;
-      }
-      .text-anim {
-        opacity: 1;
-      }
-      .menu-bar-panel::before, .feature-card::before {
-        display: none;
-      }
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-      .hero {
-        padding: 60px 0 40px;
-      }
-      .hero-title {
-        font-size: 42px;
-      }
-      .hero-subtitle {
-        font-size: 19px;
-      }
-      .features {
-        grid-template-columns: 1fr;
-      }
-      .visual-section {
-        padding: 0 0 60px;
-      }
-    }
-    @media (max-width: 480px) {
-      .hero-title {
-        font-size: 34px;
-      }
-      .hero-subtitle {
-        font-size: 17px;
-      }
-      .hero-ctas {
-        flex-direction: column;
-        width: 100%;
-      }
-      .btn {
-        width: 100%;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>NewNet — Downloads, beautifully native on Mac</title>
+<meta name="description" content="NewNet is a native macOS menu-bar frontend for yt-dlp. Paste a link, pick quality, done. Fast, private, and free.">
+<meta property="og:title" content="NewNet — Downloads, beautifully native on Mac">
+<meta property="og:description" content="A native menu-bar frontend for yt-dlp. Paste a link, pick quality, done.">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" type="image/png" href="app_icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<style>
+:root{
+--bg:#F5F5F7;--surface:#fff;--surface-2:#F5F5F7;--surface-hover:rgba(0,0,0,.035);--elev:rgba(255,255,255,.72);
+--t1:#1D1D1F;--t2:#515154;--t3:#86868B;--line:rgba(0,0,0,.09);--line-soft:rgba(0,0,0,.06);
+--accent:#0071E3;--accent-deep:#0058B0;--accent-soft:rgba(0,113,227,.1);--accent-glow:rgba(0,113,227,.28);
+--green:#1F9D55;--green-soft:rgba(31,157,85,.12);
+--glass:rgba(255,255,255,.72);--nav-bg:rgba(251,251,253,.72);
+--s1:0 1px 2px rgba(0,0,0,.05),0 4px 16px rgba(0,0,0,.06);--s2:0 8px 32px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.06);--s3:0 24px 80px rgba(0,0,0,.16),0 4px 16px rgba(0,0,0,.08);
+--ease:cubic-bezier(.22,1,.36,1);--spring:cubic-bezier(.34,1.4,.44,1);
+--r-lg:28px;--r-md:20px;--r-sm:14px;
+--max:1120px;
+}
+@media(prefers-color-scheme:dark){
+:root{
+--bg:#000;--surface:#161617;--surface-2:#1C1C1E;--surface-hover:rgba(255,255,255,.06);--elev:rgba(28,28,30,.72);
+--t1:#F5F5F7;--t2:#A1A1A6;--t3:#6E6E73;--line:rgba(255,255,255,.12);--line-soft:rgba(255,255,255,.07);
+--accent:#0A84FF;--accent-deep:#409CFF;--accent-soft:rgba(10,132,255,.16);--accent-glow:rgba(10,132,255,.4);
+--glass:rgba(22,22,24,.66);--nav-bg:rgba(10,10,12,.66);
+--s1:0 4px 24px rgba(0,0,0,.5);--s2:0 12px 48px rgba(0,0,0,.6);--s3:0 32px 96px rgba(0,0,0,.7);
+}}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{font-family:-apple-system,BlinkMacSystemFont,Inter,'SF Pro Text','Helvetica Neue',sans-serif;background:var(--bg);color:var(--t1);line-height:1.5;-webkit-font-smoothing:antialiased;overflow-x:hidden;transition:background .4s}
+::selection{background:var(--accent);color:#fff}
+*:focus-visible{outline:2px solid var(--accent);outline-offset:3px;border-radius:6px}
+img{display:block;max-width:100%}
+a{color:inherit}
+.wrap{max-width:var(--max);margin:0 auto;padding:0 28px;position:relative;z-index:2}
+.ambient{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
+.orb{position:absolute;border-radius:50%;filter:blur(110px);opacity:.55}
+.orb-a{width:640px;height:640px;top:-220px;left:50%;transform:translateX(-50%);background:radial-gradient(circle,rgba(0,113,227,.22),transparent 65%)}
+.orb-b{width:520px;height:520px;top:32%;left:-180px;background:radial-gradient(circle,rgba(90,200,250,.16),transparent 65%)}
+.orb-c{width:520px;height:520px;top:52%;right:-180px;background:radial-gradient(circle,rgba(191,90,242,.13),transparent 65%)}
+@media(prefers-color-scheme:dark){
+.orb-a{background:radial-gradient(circle,rgba(10,132,255,.28),transparent 65%)}
+.orb-b{background:radial-gradient(circle,rgba(100,210,255,.12),transparent 65%)}
+.orb-c{background:radial-gradient(circle,rgba(191,90,242,.16),transparent 65%)}
+}
+.grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.028;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+.nav{position:sticky;top:0;z-index:100;background:var(--nav-bg);backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);border-bottom:1px solid var(--line-soft);transition:box-shadow .3s}
+.nav.scrolled{box-shadow:0 4px 24px rgba(0,0,0,.08)}
+.nav-in{max-width:var(--max);margin:0 auto;padding:13px 28px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:16px;letter-spacing:-.01em;text-decoration:none}
+.brand img{width:26px;height:26px;border-radius:7px;box-shadow:0 2px 8px rgba(0,0,0,.18)}
+.nav-mid{display:flex;gap:28px}
+.nav-mid a{text-decoration:none;font-size:14px;color:var(--t2);transition:color .2s}
+.nav-mid a:hover{color:var(--t1)}
+.nav-cta{display:inline-flex;align-items:center;gap:7px;background:var(--accent);color:#fff;font-size:13.5px;font-weight:600;padding:8px 18px;border-radius:99px;text-decoration:none;transition:transform .2s var(--ease),box-shadow .2s,filter .2s;box-shadow:0 4px 14px var(--accent-glow)}
+.nav-cta:hover{transform:translateY(-1px);filter:brightness(1.08)}
+.burger{display:none;background:none;border:0;cursor:pointer;padding:8px}
+.burger span{display:block;width:20px;height:2px;background:var(--t1);border-radius:2px;margin:4px 0;transition:.3s var(--ease)}
+.hero{padding:88px 0 20px;text-align:center}
+.pill{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--t2);background:var(--surface);border:1px solid var(--line);border-radius:99px;padding:7px 8px 7px 8px;text-decoration:none;box-shadow:var(--s1);transition:transform .25s var(--ease),box-shadow .25s;margin-bottom:30px}
+.pill:hover{transform:translateY(-1px);box-shadow:var(--s2)}
+.pill-new{background:var(--accent);color:#fff;font-size:11px;font-weight:700;letter-spacing:.04em;padding:3px 9px;border-radius:99px;text-transform:uppercase}
+.pill-arrow{color:var(--t3);font-size:15px;padding-right:6px}
+.icon-stack{position:relative;width:124px;height:124px;margin:6px auto 34px}
+.icon-stack img{width:124px;height:124px;border-radius:30px;position:relative;z-index:2;box-shadow:var(--s3);transition:transform .5s var(--spring)}
+.icon-stack:hover img{transform:translateY(-5px) rotate(-2deg) scale(1.02)}
+.icon-ring{position:absolute;inset:-22px;border-radius:44px;border:1px solid var(--line);z-index:0}
+.icon-ring.r2{inset:-44px;opacity:.5}
+.icon-glow{position:absolute;inset:8px;background:var(--accent);filter:blur(44px);opacity:.28;z-index:1;border-radius:30px}
+h1.display{font-size:clamp(44px,7vw,84px);font-weight:700;letter-spacing:-.045em;line-height:1.02;margin-bottom:22px}
+.grad{background:linear-gradient(100deg,var(--accent-deep),var(--accent) 45%,#5AC8FA 80%);-webkit-background-clip:text;background-clip:text;color:transparent}
+@media(prefers-color-scheme:dark){.grad{background:linear-gradient(100deg,#7DC4FF,#0A84FF 50%,#BF5AF2);-webkit-background-clip:text;background-clip:text}}
+.lede{font-size:clamp(18px,2.4vw,22px);color:var(--t2);max-width:620px;margin:0 auto 38px;letter-spacing:-.014em;line-height:1.5}
+.cta-row{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-bottom:22px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:9px;padding:16px 34px;border-radius:99px;font-size:16px;font-weight:600;text-decoration:none;transition:transform .22s var(--ease),box-shadow .25s,filter .2s,background .2s;cursor:pointer;border:0}
+.btn-p{background:var(--accent);color:#fff;box-shadow:0 8px 28px var(--accent-glow)}
+.btn-p:hover{transform:translateY(-2px) scale(1.015);filter:brightness(1.07);box-shadow:0 14px 40px var(--accent-glow)}
+.btn-p:active{transform:scale(.97)}
+.btn-s{background:var(--surface);color:var(--accent);border:1px solid var(--line);box-shadow:var(--s1)}
+.btn-s:hover{background:var(--surface-hover);transform:translateY(-2px);box-shadow:var(--s2)}
+.meta-row{display:flex;justify-content:center;gap:8px 22px;flex-wrap:wrap;font-size:13.5px;color:var(--t3);margin-bottom:64px}
+.meta-row span{display:inline-flex;align-items:center;gap:7px}
+.dot{width:6px;height:6px;border-radius:50%;background:var(--green);box-shadow:0 0 10px rgba(31,157,85,.8)}
+.stage{position:relative;max-width:880px;margin:0 auto;padding:0 0 90px;perspective:1600px}
+.mac{position:relative;background:var(--elev);backdrop-filter:blur(40px) saturate(1.5);-webkit-backdrop-filter:blur(40px) saturate(1.5);border:1px solid var(--line);border-radius:22px;box-shadow:var(--s3);overflow:hidden;transform:rotateX(4deg);transition:transform .5s var(--ease);z-index:2}
+.stage:hover .mac{transform:rotateX(0deg)}
+.mac-bar{display:flex;align-items:center;gap:8px;padding:13px 18px;border-bottom:1px solid var(--line-soft)}
+.tl{width:11px;height:11px;border-radius:50%}
+.tl.r{background:#FF5F57}.tl.y{background:#FEBC2E}.tl.g{background:#28C840}
+.mac-bar-title{flex:1;text-align:center;font-size:12.5px;font-weight:600;color:var(--t3);letter-spacing:.02em}
+.menubar-strip{display:flex;align-items:center;gap:10px;padding:10px 18px;background:var(--surface-2);border-bottom:1px solid var(--line-soft);font-size:12.5px;color:var(--t2)}
+.mb-icon{width:24px;height:24px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:12px}
+.mb-live{margin-left:auto;font-size:11px;font-weight:600;color:var(--green);background:var(--green-soft);padding:3px 10px;border-radius:99px;display:flex;align-items:center;gap:6px}
+.mb-live i{width:6px;height:6px;border-radius:50%;background:var(--green);animation:blink 1.6s infinite}
+@keyframes blink{50%{opacity:.3}}
+.panel-body{padding:18px}
+.url-row{display:flex;gap:10px;margin-bottom:14px}
+.url-box{flex:1;display:flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:13.5px;color:var(--t3);transition:border-color .2s,box-shadow .2s;min-width:0}
+.url-box span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.url-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px var(--accent-soft)}
+.add-btn{background:var(--accent);color:#fff;border:0;font-weight:600;font-size:14px;padding:0 26px;border-radius:12px;cursor:pointer;transition:filter .2s,transform .15s}
+.add-btn:hover{filter:brightness(1.1)}
+.add-btn:active{transform:scale(.96)}
+.seg{display:flex;background:var(--surface-2);border:1px solid var(--line-soft);border-radius:12px;padding:4px;gap:4px;margin-bottom:6px}
+.seg button{flex:1;border:0;background:transparent;color:var(--t2);font-size:12.5px;font-weight:600;padding:8px;border-radius:9px;cursor:pointer;font-family:inherit;transition:.2s}
+.seg button.on{background:var(--surface);color:var(--t1);box-shadow:var(--s1)}
+.dl{display:flex;gap:14px;align-items:center;padding:14px 12px;border-radius:14px;transition:background .2s}
+.dl:hover{background:var(--surface-hover)}
+.dl + .dl{border-top:1px solid var(--line-soft)}
+.thumb{width:64px;height:40px;border-radius:9px;flex-shrink:0;position:relative;overflow:hidden;display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700}
+.th1{background:linear-gradient(135deg,#0A84FF,#5AC8FA)}
+.th2{background:linear-gradient(135deg,#1D1D1F,#515154)}
+.dl-info{flex:1;min-width:0;text-align:left}
+.dl-t{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:7px}
+.track{height:5px;background:var(--line-soft);border-radius:3px;overflow:hidden}
+.fill{height:100%;border-radius:3px;background:linear-gradient(90deg,var(--accent-deep),var(--accent));width:0%}
+.fill.f1{animation:load 3.2s .9s var(--ease) forwards}
+@keyframes load{0%{width:4%}35%{width:48%}70%{width:71%}100%{width:86%}}
+.dl-sub{display:flex;justify-content:space-between;font-size:11.5px;color:var(--t3);margin-top:6px;font-variant-numeric:tabular-nums}
+.badge-done{font-size:11px;font-weight:700;color:var(--green);background:var(--green-soft);padding:4px 11px;border-radius:99px;white-space:nowrap}
+.q{font-size:11px;font-weight:600;color:var(--t2);border:1px solid var(--line);padding:4px 9px;border-radius:7px;white-space:nowrap}
+.panel-foot{display:flex;justify-content:space-between;align-items:center;padding:12px 18px;border-top:1px solid var(--line-soft);font-size:12px;color:var(--t3)}
+.float{position:absolute;z-index:3;background:var(--elev);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--line);border-radius:16px;box-shadow:var(--s2);padding:12px 16px;display:flex;align-items:center;gap:11px;font-size:13px;font-weight:600;animation:hover 5s ease-in-out infinite}
+.float small{display:block;font-weight:500;color:var(--t3);font-size:11.5px}
+.float .fi{width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;flex-shrink:0}
+.f1-pos{top:64px;left:-72px}
+.f2-pos{bottom:120px;right:-64px;animation-delay:-2.5s}
+@keyframes hover{50%{transform:translateY(-10px)}}
+.logos{padding:8px 0 96px;text-align:center}
+.logos p{font-size:12px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--t3);margin-bottom:22px}
+.logo-row{display:flex;justify-content:center;gap:12px;flex-wrap:wrap}
+.logo-chip{font-size:14px;font-weight:600;color:var(--t2);border:1px solid var(--line);background:var(--surface);padding:10px 20px;border-radius:99px;transition:.25s var(--ease);cursor:default}
+.logo-chip:hover{color:var(--t1);border-color:var(--accent);transform:translateY(-2px);box-shadow:var(--s1)}
+section.block{padding:36px 0}
+.eyebrow{font-size:13px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--accent);margin-bottom:16px}
+h2.title{font-size:clamp(32px,4.6vw,52px);font-weight:700;letter-spacing:-.035em;line-height:1.08;margin-bottom:16px}
+.sub{font-size:18px;color:var(--t2);max-width:600px;line-height:1.55;margin-bottom:48px}
+.center{text-align:center}.center .sub{margin-left:auto;margin-right:auto}
+.bento{display:grid;grid-template-columns:repeat(6,1fr);gap:18px}
+.card{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-lg);padding:36px;position:relative;overflow:hidden;transition:transform .35s var(--ease),box-shadow .35s;box-shadow:var(--s1)}
+.card:hover{transform:translateY(-4px);box-shadow:var(--s2)}
+.card::after{content:'';position:absolute;inset:0;background:radial-gradient(420px circle at var(--mx,50%) var(--my,50%),var(--accent-soft),transparent 65%);opacity:0;transition:opacity .35s;pointer-events:none}
+.card:hover::after{opacity:1}
+.span4{grid-column:span 4}.span2{grid-column:span 2}.span3{grid-column:span 3}.span6{grid-column:span 6}
+.f-ic{width:46px;height:46px;border-radius:14px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center;margin-bottom:22px}
+.card h3{font-size:21px;font-weight:700;letter-spacing:-.02em;margin-bottom:10px}
+.card p{font-size:15px;color:var(--t2);line-height:1.6;max-width:44ch}
+.code-mock{margin-top:26px;background:#0B0B0D;border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:18px 20px;font-family:ui-monospace,'SF Mono',Menlo,monospace;font-size:12.5px;line-height:1.8;color:#D4D4D8;overflow-x:auto}
+.code-mock .g{color:#7EE787}.code-mock .b{color:#79C0FF}.code-mock .d{color:#8B949E}.code-mock .y{color:#FFA657}
+.fmt-row{display:flex;gap:9px;flex-wrap:wrap;margin-top:22px}
+.fmt{font-size:12.5px;font-weight:600;background:var(--surface-2);border:1px solid var(--line);padding:7px 14px;border-radius:9px;color:var(--t2)}
+.privacy-big{font-size:64px;font-weight:700;letter-spacing:-.04em;line-height:1;margin:8px 0 4px}
+.privacy-big em{font-style:normal;color:var(--green)}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;counter-reset:step}
+.step{background:var(--surface);border:1px solid var(--line-soft);border-radius:var(--r-md);padding:32px 30px;position:relative;transition:.3s var(--ease);box-shadow:var(--s1)}
+.step:hover{transform:translateY(-4px);box-shadow:var(--s2)}
+.step-n{width:34px;height:34px;border-radius:50%;background:var(--accent);color:#fff;font-weight:700;font-size:14px;display:flex;align-items:center;justify-content:center;margin-bottom:20px}
+.step h3{font-size:18px;font-weight:700;margin-bottom:8px;letter-spacing:-.01em}
+.step p{font-size:14.5px;color:var(--t2);line-height:1.6}
+.cta-band{margin:70px 0;background:linear-gradient(135deg,#00254D,#0058B0 55%,#0A84FF);border-radius:32px;padding:clamp(48px,7vw,88px) clamp(28px,6vw,80px);text-align:center;color:#fff;position:relative;overflow:hidden;box-shadow:0 32px 96px rgba(0,113,227,.35)}
+@media(prefers-color-scheme:dark){.cta-band{background:linear-gradient(135deg,#001733,#003A75 55%,#0058B0)}}
+.cta-band::before{content:'';position:absolute;width:560px;height:560px;border-radius:50%;background:radial-gradient(circle,rgba(255,255,255,.16),transparent 65%);top:-200px;left:50%;transform:translateX(-50%)}
+.cta-band h2{font-size:clamp(30px,4.6vw,50px);font-weight:700;letter-spacing:-.035em;margin-bottom:14px;position:relative}
+.cta-band p{opacity:.82;font-size:17px;margin-bottom:34px;position:relative}
+.btn-w{background:#fff;color:#0071E3;position:relative}
+.btn-w:hover{transform:translateY(-2px);box-shadow:0 16px 40px rgba(0,0,0,.25)}
+.btn-ghost{border:1.5px solid rgba(255,255,255,.4);color:#fff;position:relative}
+.btn-ghost:hover{background:rgba(255,255,255,.12)}
+.req{display:flex;justify-content:center;gap:20px;flex-wrap:wrap;margin-top:28px;font-size:13px;opacity:.75;position:relative}
+.faq-list{max-width:720px;margin:0 auto}
+.faq{border-bottom:1px solid var(--line)}
+.faq button{width:100%;background:none;border:0;display:flex;justify-content:space-between;align-items:center;gap:16px;padding:22px 4px;font-family:inherit;font-size:16.5px;font-weight:600;color:var(--t1);cursor:pointer;text-align:left;letter-spacing:-.01em}
+.faq .plus{width:28px;height:28px;border-radius:50%;background:var(--surface-2);border:1px solid var(--line);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px;font-weight:400;color:var(--t2);transition:.3s var(--ease)}
+.faq.open .plus{transform:rotate(45deg);background:var(--accent);border-color:var(--accent);color:#fff}
+.faq-a{max-height:0;overflow:hidden;transition:max-height .4s var(--ease)}
+.faq-a p{font-size:15px;color:var(--t2);line-height:1.65;padding:0 4px 24px;max-width:62ch}
+footer{border-top:1px solid var(--line-soft);margin-top:80px;padding:44px 0 54px}
+.foot{display:flex;justify-content:space-between;align-items:center;gap:20px;flex-wrap:wrap}
+.foot-brand{display:flex;align-items:center;gap:10px;font-weight:600;font-size:15px}
+.foot-brand img{width:24px;height:24px;border-radius:6px}
+.foot-links{display:flex;gap:24px}
+.foot-links a{font-size:13.5px;color:var(--t2);text-decoration:none}
+.foot-links a:hover{color:var(--t1)}
+.foot-note{width:100%;font-size:13px;color:var(--t3);margin-top:8px}
+.foot-note a{color:var(--t2);text-decoration:none;border-bottom:1px solid var(--line)}
+.rv{opacity:0;transform:translateY(28px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+.rv.in{opacity:1;transform:none}
+.d1{transition-delay:.08s}.d2{transition-delay:.16s}.d3{transition-delay:.24s}
+@media(max-width:900px){
+.nav-mid{display:none}
+.burger{display:block}
+.nav-mid.open{display:flex;position:absolute;top:100%;left:0;right:0;flex-direction:column;background:var(--nav-bg);backdrop-filter:blur(24px);padding:12px 28px 20px;gap:4px;border-bottom:1px solid var(--line)}
+.nav-mid.open a{padding:10px 0;font-size:16px;border-top:1px solid var(--line-soft)}
+.bento{grid-template-columns:1fr}
+.span4,.span2,.span3,.span6{grid-column:span 1}
+.steps{grid-template-columns:1fr}
+.float{display:none}
+.mac{transform:none}
+.hero{padding:60px 0 10px}
+}
+@media(max-width:560px){
+.btn{width:100%;padding:15px 20px;font-size:15px}
+.cta-row{flex-direction:column}
+.url-row{flex-direction:column}
+.add-btn{padding:12px}
+.card{padding:28px 24px}
+}
+@media(prefers-reduced-motion:reduce){
+*,*::before,*::after{animation:none!important;transition:none!important}
+.rv{opacity:1;transform:none}
+.fill.f1{width:86%}
+}
+</style>
 </head>
 <body>
-  
-  <div class="ambient-background">
-    <div class="ambient-glow"></div>
-  </div>
+<div class="ambient"><div class="orb orb-a"></div><div class="orb orb-b"></div><div class="orb orb-c"></div></div>
+<div class="grain"></div>
 
-  <nav class="nav-bar animate-in">
-    <div class="nav-content">
-      <div class="nav-brand">
-        <img src="app_icon.png" alt="NewNet" class="nav-icon">
-        NewNet
-      </div>
-      <div class="nav-links">
-        <a href="https://github.com/sfdcnaveen/NewNet" target="_blank" rel="noopener noreferrer">GitHub</a>
-      </div>
-    </div>
-  </nav>
+<nav class="nav" id="nav">
+<div class="nav-in">
+<a class="brand" href="#"><img src="app_icon.png" alt="NewNet">NewNet</a>
+<div class="nav-mid" id="navMid">
+<a href="#features">Features</a>
+<a href="#how">How it works</a>
+<a href="#faq">FAQ</a>
+<a href="https://github.com/sfdcnaveen/NewNet" target="_blank" rel="noopener">GitHub</a>
+</div>
+<div style="display:flex;align-items:center;gap:10px">
+<a class="nav-cta" href="https://github.com/sfdcnaveen/NewNet/releases">Download</a>
+<button class="burger" id="burger" aria-label="Menu"><span></span><span></span><span></span></button>
+</div>
+</div>
+</nav>
 
-  <main class="container">
-    <section class="hero">
-      <div class="hero-icon-container animate-in delay-1">
-        <div class="icon-glow"></div>
-        <img src="app_icon.png" alt="NewNet App Icon" class="hero-icon" />
-      </div>
-      
-      <h1 class="hero-title animate-in delay-2">Powerful downloads.<br>Native on your Mac.</h1>
-      <p class="hero-subtitle animate-in delay-3">NewNet brings yt-dlp's powerful capabilities into a focused menu-bar experience designed for macOS.</p>
-      
-      <div class="hero-ctas animate-in delay-4">
-        <a href="https://github.com/sfdcnaveen/NewNet/releases" class="btn btn-primary">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          Download for macOS
-        </a>
-        <a href="https://github.com/sfdcnaveen/NewNet" class="btn btn-secondary" target="_blank" rel="noopener noreferrer">
-          View on GitHub
-        </a>
-      </div>
-    </section>
+<main class="wrap">
+<header class="hero">
+<a class="pill rv in" href="https://github.com/sfdcnaveen/NewNet/releases"><span class="pill-new">New</span> 1.2.6 now with playlists &amp; 4K <span class="pill-arrow">›</span></a>
+<div class="icon-stack rv in">
+<div class="icon-ring"></div><div class="icon-ring r2"></div><div class="icon-glow"></div>
+<img src="app_icon.png" alt="NewNet app icon">
+</div>
+<h1 class="display rv in">Downloads,<br><span class="grad">beautifully native.</span></h1>
+<p class="lede rv in">NewNet puts the power of yt-dlp in your menu bar. Paste a link, pick a quality, get back to work. No terminal. No clutter.</p>
+<div class="cta-row rv in">
+<a class="btn btn-p" href="https://github.com/sfdcnaveen/NewNet/releases">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+Download for macOS</a>
+<a class="btn btn-s" href="https://github.com/sfdcnaveen/NewNet" target="_blank" rel="noopener">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.58.11.79-.25.79-.55v-2.15c-3.2.7-3.87-1.36-3.87-1.36-.52-1.33-1.28-1.68-1.28-1.68-1.04-.71.08-.7.08-.7 1.15.08 1.76 1.19 1.76 1.19 1.03 1.75 2.69 1.25 3.35.95.1-.74.4-1.25.72-1.53-2.55-.29-5.24-1.28-5.24-5.68 0-1.26.45-2.28 1.19-3.09-.12-.29-.52-1.46.11-3.05 0 0 .97-.31 3.18 1.18a11 11 0 0 1 5.8 0c2.2-1.49 3.17-1.18 3.17-1.18.63 1.59.23 2.76.11 3.05.74.81 1.19 1.83 1.19 3.09 0 4.41-2.7 5.38-5.27 5.66.41.36.78 1.06.78 2.14v3.17c0 .31.2.67.8.55A11.51 11.51 0 0 0 23.5 12C23.5 5.65 18.35.5 12 .5z"/></svg>
+Star on GitHub</a>
+</div>
+<div class="meta-row rv in">
+<span><i class="dot"></i>macOS 13+ · Apple Silicon &amp; Intel</span>
+<span>Free &amp; open source</span>
+<span>No account · No tracking</span>
+</div>
+</header>
 
-    <section class="visual-section animate-in delay-5">
-      <div class="mockup-container mockup-anim">
-        <div class="menu-bar-panel" id="mockupPanel">
-          <div class="panel-header">
-            <span class="panel-title">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              NewNet
-            </span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-          </div>
-          <div class="panel-input-group">
-            <div class="input-fake">https://youtube.com/watch?v=...</div>
-            <div class="btn-fake">Add</div>
-          </div>
-          <div class="panel-list">
-            <div class="panel-item">
-              <div class="item-icon bg-accent">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-              </div>
-              <div class="item-details">
-                <div class="item-title">Design Principles.mp4</div>
-                <div class="item-status">
-                  <div class="progress-bar"><div class="progress-fill fill-anim"></div></div>
-                  <span class="status-text text-anim">82% • 12 MB/s</span>
-                </div>
-              </div>
-            </div>
-            <div class="panel-item">
-              <div class="item-icon bg-success">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
-              </div>
-              <div class="item-details">
-                <div class="item-title">Apple Event 2024.mp4</div>
-                <div class="item-status">
-                  <span class="status-text">Completed</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+<section class="stage rv">
+<div class="float f1-pos"><div class="fi" style="background:#1F9D55"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div>Saved to Downloads<small>Apple Event 2024.mp4</small></div></div>
+<div class="float f2-pos"><div class="fi" style="background:var(--accent)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div><div>12 MB/s<small>4K · HEVC</small></div></div>
+<div class="mac" id="mac">
+<div class="mac-bar"><span class="tl r"></span><span class="tl y"></span><span class="tl g"></span><span class="mac-bar-title">NewNet — Menu Bar</span><span style="width:52px"></span></div>
+<div class="menubar-strip"><span class="mb-icon">N</span><strong style="color:var(--t1)">NewNet</strong><span style="color:var(--t3)">paste a link to begin</span><span class="mb-live"><i></i>2 active</span></div>
+<div class="panel-body">
+<div class="url-row">
+<div class="url-box"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><span>https://youtube.com/watch?v=dQw4w9WgXcQ</span></div>
+<button class="add-btn">Add</button>
+</div>
+<div class="seg"><button>Video · 4K</button><button class="on">1080p</button><button>Audio</button><button>Subtitles</button></div>
+<div class="dl">
+<div class="thumb th1">4K</div>
+<div class="dl-info">
+<div class="dl-t">Design Principles — Dieter Rams Documentary.mp4</div>
+<div class="track"><div class="fill f1"></div></div>
+<div class="dl-sub"><span>86% · 12.4 MB/s</span><span>214 of 248 MB</span></div>
+</div>
+<span class="q">HEVC</span>
+</div>
+<div class="dl">
+<div class="thumb th2">MP4</div>
+<div class="dl-info">
+<div class="dl-t">Apple Event — September 2024 Keynote.mp4</div>
+<div class="dl-sub"><span>Completed · 4.2 GB</span><span>2 min ago</span></div>
+</div>
+<span class="badge-done">Done</span>
+</div>
+</div>
+<div class="panel-foot"><span>Queue · 1 of 2 remaining</span><span>Engine yt-dlp · up to date</span></div>
+</div>
+</section>
 
-    <section class="features-section">
-      <div class="features">
-        <div class="feature-card animate-in delay-2" id="card1">
-          <div class="feature-content">
-            <div class="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect>
-                <line x1="8" y1="21" x2="16" y2="21"></line>
-                <line x1="12" y1="17" x2="12" y2="21"></line>
-              </svg>
-            </div>
-            <h3 class="feature-title">Native</h3>
-            <p class="feature-desc">Built specifically for macOS rather than adapted from a web application. Lightning fast performance.</p>
-          </div>
-        </div>
-        <div class="feature-card animate-in delay-3" id="card2">
-          <div class="feature-content">
-            <div class="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path>
-              </svg>
-            </div>
-            <h3 class="feature-title">Private</h3>
-            <p class="feature-desc">No unnecessary accounts, dashboards, or cloud processing. Everything happens locally on your Mac.</p>
-          </div>
-        </div>
-        <div class="feature-card animate-in delay-4" id="card3">
-          <div class="feature-content">
-            <div class="feature-icon">
-              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <line x1="4" y1="21" x2="4" y2="14"></line>
-                <line x1="4" y1="10" x2="4" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="12"></line>
-                <line x1="12" y1="8" x2="12" y2="3"></line>
-                <line x1="20" y1="21" x2="20" y2="16"></line>
-                <line x1="20" y1="12" x2="20" y2="3"></line>
-                <line x1="1" y1="14" x2="7" y2="14"></line>
-                <line x1="9" y1="8" x2="15" y2="8"></line>
-                <line x1="17" y1="16" x2="23" y2="16"></line>
-              </svg>
-            </div>
-            <h3 class="feature-title">Controlled</h3>
-            <p class="feature-desc">Explicit control over downloads and destinations. Choose exactly what you want and where it goes.</p>
-          </div>
-        </div>
-      </div>
-    </section>
-  </main>
+<section class="logos rv">
+<p>Works with your favourite sites</p>
+<div class="logo-row">
+<span class="logo-chip">YouTube</span><span class="logo-chip">TikTok</span><span class="logo-chip">Vimeo</span><span class="logo-chip">X / Twitter</span><span class="logo-chip">Instagram</span><span class="logo-chip">Twitch</span><span class="logo-chip">+ 1000 more</span>
+</div>
+</section>
 
-  <footer class="footer">
-    <div class="footer-content">
-      <p>Created by <a href="https://sfdcnaveen.github.io/naveen-contact-card/" target="_blank" rel="noopener noreferrer">Naveen</a></p>
-    </div>
-  </footer>
+<section class="block" id="features">
+<p class="eyebrow rv">Why NewNet</p>
+<h2 class="title rv">Powerful under the hood.<br>Effortless on the surface.</h2>
+<p class="sub rv">Everything you expect from a great Mac app — instant, quiet, and respectful of your machine.</p>
+<div class="bento">
+<div class="card span4 rv">
+<div class="f-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div>
+<h3>Truly native, truly fast</h3>
+<p>Built AppKit-first for macOS. Lives in the menu bar, launches instantly, sips battery, and feels at home on Sonoma and Sequoia — light or dark.</p>
+<div class="code-mock"><span class="d">$</span> <span class="b">newnet</span> <span class="g">--quality 1080p</span> <span class="y">"https://youtube.com/…"</span><br><span class="g">✓</span> <span class="d">Fetching formats… 4K · 1080p · 720p · opus</span><br><span class="g">✓</span> <span class="d">Downloading… 12.4 MB/s → ~/Downloads</span></div>
+</div>
+<div class="card span2 rv d1">
+<div class="f-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+<h3>Private by design</h3>
+<p>No accounts. No cloud. Everything runs locally on your Mac.</p>
+<div class="privacy-big"><em>0</em></div>
+<p style="font-size:13px">trackers, logins, or servers phoning home.</p>
+</div>
+<div class="card span2 rv">
+<div class="f-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg></div>
+<h3>Total control</h3>
+<p>Pick exact quality, format, subtitles, and destination. Playlists, chapters, and audio-only included.</p>
+</div>
+<div class="card span2 rv d1">
+<div class="f-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></div>
+<h3>yt-dlp engine</h3>
+<p>Full power of the best downloader ever made, with automatic updates. 1000+ sites supported.</p>
+</div>
+<div class="card span2 rv d2">
+<div class="f-ic"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+<h3>Set and forget</h3>
+<p>Queue links, close the panel, get a notification when everything is ready.</p>
+</div>
+</div>
+</section>
 
-  <script>
-    const isReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+<section class="block" id="how">
+<p class="eyebrow rv">How it works</p>
+<h2 class="title rv">Three steps. Ten seconds.</h2>
+<p class="sub rv">No manual to read. If you can copy a link, you already know how to use NewNet.</p>
+<div class="steps">
+<div class="step rv"><div class="step-n">1</div><h3>Copy any link</h3><p>YouTube, TikTok, Vimeo, X, Twitch — NewNet detects links from your clipboard automatically.</p></div>
+<div class="step rv d1"><div class="step-n">2</div><h3>Pick quality</h3><p>4K video, crisp 1080p, or audio-only MP3 / Opus. Add subtitles with one toggle.</p></div>
+<div class="step rv d2"><div class="step-n">3</div><h3>Done</h3><p>Files land exactly where you want them. Get notified, keep creating.</p></div>
+</div>
+<div class="card span6 rv" style="margin-top:18px;display:flex;gap:20px;align-items:center;flex-wrap:wrap">
+<div class="f-ic" style="margin:0">MP4</div>
+<div style="flex:1;min-width:220px"><h3>Every format you need</h3><p>MP4 · MKV · WebM · MP3 · Opus · M4A · SRT / VTT subtitles · Chapters · Thumbnails · Playlists</p></div>
+<div class="fmt-row" style="margin:0"><span class="fmt">4K</span><span class="fmt">1080p</span><span class="fmt">720p</span><span class="fmt">MP3</span><span class="fmt">Playlist</span></div>
+</div>
+</section>
 
-    if (!isReducedMotion) {
-      const cards = document.querySelectorAll('.feature-card');
-      cards.forEach(card => {
-        card.addEventListener('mousemove', e => {
-          const rect = card.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          card.style.setProperty('--x', `${x}px`);
-          card.style.setProperty('--y', `${y}px`);
-        });
-      });
+<section class="block center rv">
+<div class="cta-band">
+<h2>Your downloads, handled.</h2>
+<p>Free forever. Open source. Made with care for the Mac.</p>
+<div class="cta-row" style="margin-bottom:0">
+<a class="btn btn-w" href="https://github.com/sfdcnaveen/NewNet/releases">Download for macOS</a>
+<a class="btn btn-ghost" href="https://github.com/sfdcnaveen/NewNet" target="_blank" rel="noopener">View source</a>
+</div>
+<div class="req"><span>macOS 13 Ventura or later</span><span>Apple Silicon &amp; Intel</span><span>~18 MB download</span></div>
+</div>
+</section>
 
-      const panel = document.getElementById('mockupPanel');
-      if (panel) {
-        panel.addEventListener('mousemove', e => {
-          const rect = panel.getBoundingClientRect();
-          const x = e.clientX - rect.left;
-          const y = e.clientY - rect.top;
-          panel.style.setProperty('--px', `${x}px`);
-          panel.style.setProperty('--py', `${y}px`);
-          
-          const centerX = rect.width / 2;
-          const centerY = rect.height / 2;
-          const tiltX = (y - centerY) / centerY * -2;
-          const tiltY = (x - centerX) / centerX * 2;
-          panel.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
-        });
-        
-        panel.addEventListener('mouseleave', () => {
-          panel.style.transform = 'rotateX(0deg) rotateY(0deg)';
-        });
-      }
-    }
-  </script>
+<section class="block" id="faq">
+<p class="eyebrow rv center" style="text-align:center">FAQ</p>
+<h2 class="title rv center" style="text-align:center">Questions, answered.</h2>
+<div class="faq-list rv">
+<div class="faq"><button>Is NewNet free?<span class="plus">+</span></button><div class="faq-a"><p>Yes — completely free and open source. No premium tier, no paywalled formats, no ads. If it saves you time, a GitHub star is plenty.</p></div></div>
+<div class="faq"><button>How does it download videos?<span class="plus">+</span></button><div class="faq-a"><p>NewNet is a native frontend for yt-dlp, the community-maintained engine that supports 1000+ sites. NewNet handles updates, quality selection, and progress — yt-dlp does the heavy lifting.</p></div></div>
+<div class="faq"><button>Is my data private?<span class="plus">+</span></button><div class="faq-a"><p>Entirely. There are no accounts and no servers. Links you paste and files you download never leave your Mac.</p></div></div>
+<div class="faq"><button>Which sites are supported?<span class="plus">+</span></button><div class="faq-a"><p>YouTube, TikTok, Vimeo, X, Instagram, Twitch, and over a thousand more via yt-dlp. If yt-dlp supports it, NewNet supports it.</p></div></div>
+<div class="faq"><button>Apple Silicon or Intel?<span class="plus">+</span></button><div class="faq-a"><p>Both. NewNet runs natively on Apple Silicon and Intel Macs running macOS 13 Ventura or later.</p></div></div>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap foot">
+<div class="foot-brand"><img src="app_icon.png" alt="NewNet">NewNet</div>
+<div class="foot-links"><a href="#features">Features</a><a href="#faq">FAQ</a><a href="https://github.com/sfdcnaveen/NewNet" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/sfdcnaveen/NewNet/releases">Releases</a></div>
+<p class="foot-note">Free &amp; open source · Powered by <a href="https://github.com/yt-dlp/yt-dlp" target="_blank" rel="noopener">yt-dlp</a> · Created by <a href="https://sfdcnaveen.github.io/naveen-contact-card/" target="_blank" rel="noopener">Naveen</a></p>
+</div>
+</footer>
+
+<script>
+var nav=document.getElementById('nav'),burger=document.getElementById('burger'),mid=document.getElementById('navMid');
+addEventListener('scroll',function(){nav.classList.toggle('scrolled',scrollY>12)},{passive:true});
+burger.addEventListener('click',function(){mid.classList.toggle('open')});
+mid.addEventListener('click',function(e){if(e.target.tagName==='A')mid.classList.remove('open')});
+var reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target)}})},{threshold:.12});
+document.querySelectorAll('.rv').forEach(function(el){io.observe(el)});
+if(!reduced){
+document.querySelectorAll('.card').forEach(function(c){c.addEventListener('mousemove',function(e){var r=c.getBoundingClientRect();c.style.setProperty('--mx',(e.clientX-r.left)+'px');c.style.setProperty('--my',(e.clientY-r.top)+'px')})});
+var mac=document.getElementById('mac');
+if(mac&&matchMedia('(pointer:fine)').matches){var st=document.querySelector('.stage');st.addEventListener('mousemove',function(e){var r=st.getBoundingClientRect(),x=(e.clientX-r.left)/r.width-.5,y=(e.clientY-r.top)/r.height-.5;mac.style.transform='rotateX('+(-y*5)+'deg) rotateY('+(x*7)+'deg)'});st.addEventListener('mouseleave',function(){mac.style.transform=''})}
+}
+document.querySelectorAll('.faq').forEach(function(f){var b=f.querySelector('button'),a=f.querySelector('.faq-a');b.addEventListener('click',function(){var open=f.classList.contains('open');document.querySelectorAll('.faq.open').forEach(function(o){o.classList.remove('open');o.querySelector('.faq-a').style.maxHeight=null});if(!open){f.classList.add('open');a.style.maxHeight=a.scrollHeight+'px'}})});
+document.querySelectorAll('.seg button').forEach(function(b){b.addEventListener('click',function(){b.parentElement.querySelectorAll('button').forEach(function(x){x.classList.remove('on')});b.classList.add('on')})});
+</script>
 </body>
 </html>
